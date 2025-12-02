@@ -140,7 +140,7 @@ fun ExpenseItem(expense: Expense) {
         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
-        Row(modifier = Modifier.intrinsicHeight(IntrinsicSize.Min)) {
+        Row(modifier = Modifier.height(IntrinsicSize.Min)) {
             // Barra laterale colorata (Stile visivo desktop)
             Box(
                 modifier = Modifier

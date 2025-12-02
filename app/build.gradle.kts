@@ -88,6 +88,7 @@ dependencies {
     // --- 4. DIPENDENZE BASE (Mantieni le tue esistenti) ---
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.appcompat) // Opzionale con Compose, ma male non fa
+    implementation(libs.material)
 
     // Testing
     testImplementation(libs.junit)

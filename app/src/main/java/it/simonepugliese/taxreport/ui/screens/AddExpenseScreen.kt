@@ -11,7 +11,7 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.AttachFile
 import androidx.compose.material.icons.filled.CalendarToday
 import androidx.compose.material.icons.filled.Delete
@@ -117,7 +117,8 @@ fun AddExpenseScreen(
                 title = { Text("Nuova Spesa") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        Icon(Icons.Default.ArrowBack, "Indietro")
+                        // [FIX] Sostituito Default.ArrowBack con AutoMirrored.Filled.ArrowBack
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, "Indietro")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -137,7 +138,6 @@ fun AddExpenseScreen(
             // RIGA 1: Persona e Anno
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
 
-                // --- DROPDOWN PERSONA (Corretto con ExposedDropdownMenuBox) ---
                 ExposedDropdownMenuBox(
                     expanded = expandedPerson,
                     onExpandedChange = { expandedPerson = !expandedPerson },
@@ -150,7 +150,7 @@ fun AddExpenseScreen(
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPerson) },
                         modifier = Modifier
-                            .menuAnchor() // Ora funziona perché è dentro ExposedDropdownMenuBox
+                            .menuAnchor()
                             .fillMaxWidth(),
                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
                     )
@@ -171,7 +171,6 @@ fun AddExpenseScreen(
                     }
                 }
 
-                // --- DROPDOWN ANNO (Corretto) ---
                 ExposedDropdownMenuBox(
                     expanded = expandedYear,
                     onExpandedChange = { expandedYear = !expandedYear },
@@ -220,7 +219,6 @@ fun AddExpenseScreen(
                         .clickable { datePickerDialog.show() }
                 )
 
-                // --- DROPDOWN TIPO (Corretto) ---
                 ExposedDropdownMenuBox(
                     expanded = expandedType,
                     onExpandedChange = { expandedType = !expandedType },

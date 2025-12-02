@@ -42,7 +42,7 @@ class DashboardViewModel : ViewModel() {
                 }
 
                 // [RIUTILIZZO BACKEND] Chiamata diretta al metodo del JAR
-                val expenses = ServiceManager.getMetadata().findByYear(year)
+                val expenses = ServiceManager.get().metadata.findByYear(year)
 
                 // Ordiniamo per data (dal più recente) parsando la stringa rawDate
                 val sorted = expenses.sortedByDescending {
