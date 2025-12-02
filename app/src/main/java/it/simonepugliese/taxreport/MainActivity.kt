@@ -3,11 +3,11 @@ package it.simonepugliese.taxreport
 import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
-import androidx.compose.material3.Text
 import androidx.compose.runtime.*
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
+import it.simonepugliese.taxreport.ui.screens.AddExpenseScreen
 import it.simonepugliese.taxreport.ui.screens.DashboardScreen
 import it.simonepugliese.taxreport.ui.screens.SettingsScreen
 import it.simonepugliese.taxreport.util.ServiceManager
@@ -22,7 +22,7 @@ class MainActivity : ComponentActivity() {
             val navController = rememberNavController()
             val scope = rememberCoroutineScope()
 
-            // Stato iniziale: controlliamo se siamo già loggati
+            // Stato iniziale
             var startDestination by remember { mutableStateOf("loading") }
 
             LaunchedEffect(Unit) {
@@ -33,7 +33,6 @@ class MainActivity : ComponentActivity() {
             }
 
             if (startDestination == "loading") {
-                // Puoi mettere uno splash screen qui se vuoi
                 return@setContent
             }
 
@@ -41,7 +40,6 @@ class MainActivity : ComponentActivity() {
                 composable("settings") {
                     SettingsScreen(
                         onConfigSaved = {
-                            // Rimuove settings dallo stack così il tasto back non torna lì
                             navController.navigate("dashboard") {
                                 popUpTo("settings") { inclusive = true }
                             }
@@ -57,7 +55,9 @@ class MainActivity : ComponentActivity() {
                 }
 
                 composable("add_expense") {
-                    Text("Form Nuova Spesa (In arrivo)")
+                    AddExpenseScreen(
+                        onBack = { navController.popBackStack() }
+                    )
                 }
             }
         }
