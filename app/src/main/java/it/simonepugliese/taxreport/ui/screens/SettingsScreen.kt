@@ -7,6 +7,7 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.PersonAdd
 import androidx.compose.material.icons.filled.Save
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -19,6 +20,7 @@ import it.simonepugliese.taxreport.util.ServiceManager
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import pugliesesimone.taxreport.model.Person
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -27,8 +29,7 @@ fun SettingsScreen(onConfigSaved: () -> Unit) {
     val scope = rememberCoroutineScope()
     var isLoading by remember { mutableStateOf(false) }
 
-    // Stati per i campi di input
-    // Li inizializziamo vuoti, poi li riempiamo leggendo le preferenze salvate
+    // Stati Configurazione
     var host by remember { mutableStateOf("") }
     var dbPort by remember { mutableStateOf("3306") }
     var dbName by remember { mutableStateOf("taxreport") }
@@ -38,7 +39,10 @@ fun SettingsScreen(onConfigSaved: () -> Unit) {
     var smbUser by remember { mutableStateOf("") }
     var smbPass by remember { mutableStateOf("") }
 
-    // Caricamento dati iniziali (se esistono)
+    // Stati Aggiunta Persona
+    var newPersonName by remember { mutableStateOf("") }
+    var newPersonCF by remember { mutableStateOf("") }
+
     LaunchedEffect(Unit) {
         val prefs = context.getSharedPreferences("taxreport_config", Context.MODE_PRIVATE)
         host = prefs.getString(ServiceManager.KEY_HOST, "") ?: ""
@@ -66,98 +70,31 @@ fun SettingsScreen(onConfigSaved: () -> Unit) {
             modifier = Modifier
                 .padding(padding)
                 .padding(16.dp)
-                .verticalScroll(rememberScrollState()), // Permette di scrollare se la tastiera copre i campi
+                .verticalScroll(rememberScrollState()),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text(
-                text = "Database (MariaDB)",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Text("Database (MariaDB)", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
 
-            OutlinedTextField(
-                value = host,
-                onValueChange = { host = it },
-                label = { Text("Host IP (Raspberry)") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
+            OutlinedTextField(value = host, onValueChange = { host = it }, label = { Text("Host IP") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-                OutlinedTextField(
-                    value = dbPort,
-                    onValueChange = { dbPort = it },
-                    label = { Text("Porta") },
-                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                    modifier = Modifier.weight(1f),
-                    singleLine = true
-                )
-                OutlinedTextField(
-                    value = dbName,
-                    onValueChange = { dbName = it },
-                    label = { Text("Nome DB") },
-                    modifier = Modifier.weight(2f),
-                    singleLine = true
-                )
+                OutlinedTextField(value = dbPort, onValueChange = { dbPort = it }, label = { Text("Porta") }, keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number), modifier = Modifier.weight(1f), singleLine = true)
+                OutlinedTextField(value = dbName, onValueChange = { dbName = it }, label = { Text("Nome DB") }, modifier = Modifier.weight(2f), singleLine = true)
             }
-
-            OutlinedTextField(
-                value = dbUser,
-                onValueChange = { dbUser = it },
-                label = { Text("Utente DB") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            OutlinedTextField(
-                value = dbPass,
-                onValueChange = { dbPass = it },
-                label = { Text("Password DB") },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            OutlinedTextField(value = dbUser, onValueChange = { dbUser = it }, label = { Text("Utente DB") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            OutlinedTextField(value = dbPass, onValueChange = { dbPass = it }, label = { Text("Password DB") }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth(), singleLine = true)
 
             Spacer(modifier = Modifier.height(10.dp))
             HorizontalDivider()
             Spacer(modifier = Modifier.height(10.dp))
 
-            Text(
-                text = "Storage (SMB/Samba)",
-                style = MaterialTheme.typography.titleMedium,
-                color = MaterialTheme.colorScheme.primary
-            )
+            Text("Storage (SMB/Samba)", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
 
-            OutlinedTextField(
-                value = smbShare,
-                onValueChange = { smbShare = it },
-                label = { Text("Share Name") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            OutlinedTextField(value = smbShare, onValueChange = { smbShare = it }, label = { Text("Share Name") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            OutlinedTextField(value = smbUser, onValueChange = { smbUser = it }, label = { Text("Utente SMB") }, modifier = Modifier.fillMaxWidth(), singleLine = true)
+            OutlinedTextField(value = smbPass, onValueChange = { smbPass = it }, label = { Text("Password SMB") }, visualTransformation = PasswordVisualTransformation(), keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password), modifier = Modifier.fillMaxWidth(), singleLine = true)
 
-            OutlinedTextField(
-                value = smbUser,
-                onValueChange = { smbUser = it },
-                label = { Text("Utente SMB") },
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
+            Spacer(modifier = Modifier.height(12.dp))
 
-            OutlinedTextField(
-                value = smbPass,
-                onValueChange = { smbPass = it },
-                label = { Text("Password SMB") },
-                visualTransformation = PasswordVisualTransformation(),
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password),
-                modifier = Modifier.fillMaxWidth(),
-                singleLine = true
-            )
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Pulsante Salva & Connetti
             Button(
                 onClick = {
                     scope.launch(Dispatchers.IO) {
@@ -173,41 +110,73 @@ fun SettingsScreen(onConfigSaved: () -> Unit) {
                                 ServiceManager.KEY_SMB_USER to smbUser,
                                 ServiceManager.KEY_SMB_PASS to smbPass
                             )
-
-                            // 1. Salva e Tenta la connessione
-                            // Se fallisce (es. IP sbagliato), lancerà IOException
                             ServiceManager.saveConfigAndConnect(context, config)
-
-                            // 2. Se siamo qui, è andata bene!
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Connesso con successo!", Toast.LENGTH_SHORT).show()
-                                onConfigSaved() // Callback per navigare alla Dashboard
+                                Toast.makeText(context, "Connesso!", Toast.LENGTH_SHORT).show()
+                                onConfigSaved()
                             }
                         } catch (e: Exception) {
                             withContext(Dispatchers.Main) {
-                                Toast.makeText(context, "Errore connessione: ${e.message}", Toast.LENGTH_LONG).show()
+                                Toast.makeText(context, "Errore: ${e.message}", Toast.LENGTH_LONG).show()
                             }
-                        } finally {
-                            isLoading = false
-                        }
+                        } finally { isLoading = false }
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(50.dp),
                 enabled = !isLoading
             ) {
-                if (isLoading) {
-                    CircularProgressIndicator(
-                        modifier = Modifier.size(24.dp),
-                        color = MaterialTheme.colorScheme.onPrimary,
-                        strokeWidth = 2.dp
-                    )
-                    Spacer(Modifier.width(12.dp))
-                    Text("Connessione in corso...")
-                } else {
-                    Icon(Icons.Default.Save, contentDescription = null)
-                    Spacer(Modifier.width(8.dp))
-                    Text("Salva e Connetti")
-                }
+                if (isLoading) CircularProgressIndicator(modifier = Modifier.size(24.dp), color = MaterialTheme.colorScheme.onPrimary)
+                else Icon(Icons.Default.Save, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Salva e Connetti")
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+            HorizontalDivider()
+            Spacer(modifier = Modifier.height(10.dp))
+
+            // SEZIONE AGGIUNTA PERSONE
+            Text("Gestione Persone", style = MaterialTheme.typography.titleMedium, color = MaterialTheme.colorScheme.primary)
+
+            OutlinedTextField(
+                value = newPersonName,
+                onValueChange = { newPersonName = it },
+                label = { Text("Nome Cognome") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            OutlinedTextField(
+                value = newPersonCF,
+                onValueChange = { newPersonCF = it },
+                label = { Text("Codice Fiscale") },
+                modifier = Modifier.fillMaxWidth(),
+                singleLine = true
+            )
+            Button(
+                onClick = {
+                    if (newPersonName.isBlank() || newPersonCF.isBlank()) return@Button
+                    scope.launch(Dispatchers.IO) {
+                        try {
+                            if(!ServiceManager.isReady()) ServiceManager.init(context)
+                            val p = Person(newPersonName, newPersonCF)
+                            ServiceManager.get().registerPerson(p)
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Persona aggiunta!", Toast.LENGTH_SHORT).show()
+                                newPersonName = ""
+                                newPersonCF = ""
+                            }
+                        } catch (e: Exception) {
+                            withContext(Dispatchers.Main) {
+                                Toast.makeText(context, "Errore: ${e.message}", Toast.LENGTH_LONG).show()
+                            }
+                        }
+                    }
+                },
+                modifier = Modifier.fillMaxWidth()
+            ) {
+                Icon(Icons.Default.PersonAdd, null)
+                Spacer(Modifier.width(8.dp))
+                Text("Aggiungi Persona")
             }
         }
     }

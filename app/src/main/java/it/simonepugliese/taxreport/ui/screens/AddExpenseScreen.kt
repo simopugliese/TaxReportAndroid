@@ -24,7 +24,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import it.simonepugliese.taxreport.ui.viewmodel.AddExpenseViewModel
-import it.simonepugliese.taxreport.ui.viewmodel.UiAttachment
+import it.simonepugliese.taxreport.ui.viewmodel.UiAttachmentWrapper
 import pugliesesimone.taxreport.model.DocumentType
 import pugliesesimone.taxreport.model.ExpenseType
 import pugliesesimone.taxreport.model.Person
@@ -33,14 +33,15 @@ import java.util.Calendar
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun AddExpenseScreen(
+    expenseId: String? = null,
     onBack: () -> Unit,
     viewModel: AddExpenseViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
+    val attachments by viewModel.attachments.collectAsState()
     val context = LocalContext.current
 
     // Stati del Form
-    val dummyPersons = listOf(Person("Simone", "PGLSMN..."), Person("Mario", "MARROSS..."))
     var selectedPerson by remember { mutableStateOf<Person?>(null) }
     var expandedPerson by remember { mutableStateOf(false) }
 
@@ -54,9 +55,26 @@ fun AddExpenseScreen(
     var dateStr by remember { mutableStateOf("") }
 
     // Gestione File
-    var attachments by remember { mutableStateOf<List<UiAttachment>>(emptyList()) }
     var showDocTypeDialog by remember { mutableStateOf(false) }
     var pendingUris by remember { mutableStateOf<List<Uri>>(emptyList()) }
+
+    // CARICAMENTO DATI PER MODIFICA
+    LaunchedEffect(expenseId) {
+        if (expenseId != null) {
+            viewModel.loadExpenseForEdit(expenseId)
+        }
+    }
+
+    // POPOLAMENTO CAMPI AL CARICAMENTO
+    LaunchedEffect(state.initialData) {
+        state.initialData?.let { exp ->
+            selectedPerson = state.persons.find { it.id == exp.person.id } ?: exp.person
+            selectedYear = exp.year
+            selectedType = exp.expenseType
+            description = exp.description ?: ""
+            dateStr = exp.rawDate ?: ""
+        }
+    }
 
     // Launcher per selezionare file
     val fileLauncher = rememberLauncherForActivityResult(ActivityResultContracts.OpenMultipleDocuments()) { uris ->
@@ -95,10 +113,10 @@ fun AddExpenseScreen(
                     DocumentType.values().forEach { type ->
                         TextButton(
                             onClick = {
-                                val newAttachments = pendingUris.map { uri ->
-                                    UiAttachment(uri, getFileName(context, uri), type)
+                                pendingUris.forEach { uri ->
+                                    val name = getFileName(context, uri)
+                                    viewModel.addLocalAttachment(uri, name, type)
                                 }
-                                attachments = attachments + newAttachments
                                 showDocTypeDialog = false
                             },
                             modifier = Modifier.fillMaxWidth()
@@ -114,10 +132,9 @@ fun AddExpenseScreen(
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { Text("Nuova Spesa") },
+                title = { Text(if (state.isEditing) "Modifica Spesa" else "Nuova Spesa") },
                 navigationIcon = {
                     IconButton(onClick = onBack) {
-                        // [FIX] Sostituito Default.ArrowBack con AutoMirrored.Filled.ArrowBack
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, "Indietro")
                     }
                 },
@@ -149,17 +166,14 @@ fun AddExpenseScreen(
                         label = { Text("Persona") },
                         readOnly = true,
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPerson) },
-                        modifier = Modifier
-                            .menuAnchor()
-                            .fillMaxWidth(),
+                        modifier = Modifier.menuAnchor().fillMaxWidth(),
                         colors = ExposedDropdownMenuDefaults.outlinedTextFieldColors()
                     )
                     ExposedDropdownMenu(
                         expanded = expandedPerson,
                         onDismissRequest = { expandedPerson = false }
                     ) {
-                        val list = if(state.persons.isNotEmpty()) state.persons else dummyPersons
-                        list.forEach { person ->
+                        state.persons.forEach { person ->
                             DropdownMenuItem(
                                 text = { Text(person.name) },
                                 onClick = {
@@ -273,10 +287,22 @@ fun AddExpenseScreen(
             LazyColumn(modifier = Modifier.weight(1f)) {
                 items(attachments) { item ->
                     ListItem(
-                        headlineContent = { Text(item.name) },
-                        supportingContent = { Text(item.type.name) },
+                        headlineContent = {
+                            val name = when(item) {
+                                is UiAttachmentWrapper.Local -> item.name
+                                is UiAttachmentWrapper.Server -> item.name
+                            }
+                            Text(name)
+                        },
+                        supportingContent = {
+                            val typeName = when(item) {
+                                is UiAttachmentWrapper.Local -> item.type.name
+                                is UiAttachmentWrapper.Server -> "${item.document.documentType.name} (Cloud)"
+                            }
+                            Text(typeName)
+                        },
                         trailingContent = {
-                            IconButton(onClick = { attachments = attachments - item }) {
+                            IconButton(onClick = { viewModel.removeAttachment(item) }) {
                                 Icon(Icons.Default.Delete, "Rimuovi", tint = MaterialTheme.colorScheme.error)
                             }
                         }
@@ -291,7 +317,7 @@ fun AddExpenseScreen(
             Button(
                 onClick = {
                     viewModel.saveExpense(
-                        context, selectedPerson, selectedYear, dateStr, selectedType, description, attachments
+                        context, selectedPerson, selectedYear, dateStr, selectedType, description
                     )
                 },
                 modifier = Modifier.fillMaxWidth(),
@@ -300,7 +326,7 @@ fun AddExpenseScreen(
                 if (state.isLoading) CircularProgressIndicator(modifier = Modifier.size(20.dp), color = MaterialTheme.colorScheme.onPrimary)
                 else Icon(Icons.Default.Save, null)
                 Spacer(Modifier.width(8.dp))
-                Text("SALVA SPESA")
+                Text(if (state.isEditing) "AGGIORNA SPESA" else "SALVA SPESA")
             }
         }
     }
@@ -310,8 +336,8 @@ fun getFileName(context: android.content.Context, uri: Uri): String {
     var result: String? = null
     if (uri.scheme == "content") {
         val cursor = context.contentResolver.query(uri, null, null, null, null)
-        cursor.use {
-            if (it != null && it.moveToFirst()) {
+        cursor?.use {
+            if (it.moveToFirst()) {
                 val index = it.getColumnIndex(OpenableColumns.DISPLAY_NAME)
                 if(index >= 0) result = it.getString(index)
             }

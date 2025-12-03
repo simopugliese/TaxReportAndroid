@@ -27,6 +27,7 @@ import pugliesesimone.taxreport.model.ExpenseState
 fun DashboardScreen(
     onNavigateSettings: () -> Unit,
     onNavigateAddExpense: () -> Unit,
+    onNavigateEditExpense: (String) -> Unit,
     viewModel: DashboardViewModel = viewModel()
 ) {
     val state by viewModel.uiState.collectAsState()
@@ -37,7 +38,6 @@ fun DashboardScreen(
         topBar = {
             TopAppBar(
                 title = {
-                    // Selettore Anno nel Titolo
                     Box {
                         Text(
                             text = "TaxReport ${state.selectedYear} ▼",
@@ -74,7 +74,6 @@ fun DashboardScreen(
     ) { padding ->
         Column(modifier = Modifier.padding(padding)) {
 
-            // --- RIEPILOGO (Simile al grafico desktop) ---
             if (state.expenses.isNotEmpty()) {
                 val completed = state.expenses.count { it.expenseState == ExpenseState.COMPLETED }
                 val partial = state.expenses.count { it.expenseState != ExpenseState.COMPLETED }
@@ -83,8 +82,8 @@ fun DashboardScreen(
                     modifier = Modifier.fillMaxWidth().padding(16.dp),
                     horizontalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    SummaryCard("Completate", completed, Color(0xFF4CAF50), Modifier.weight(1f)) // Green
-                    SummaryCard("Da Fare", partial, Color(0xFFFF9800), Modifier.weight(1f)) // Orange
+                    SummaryCard("Completate", completed, Color(0xFF4CAF50), Modifier.weight(1f))
+                    SummaryCard("Da Fare", partial, Color(0xFFFF9800), Modifier.weight(1f))
                 }
             }
 
@@ -100,12 +99,14 @@ fun DashboardScreen(
                 )
             }
 
-            // --- LISTA SPESE ---
             LazyColumn(
                 contentPadding = PaddingValues(bottom = 80.dp)
             ) {
                 items(state.expenses) { expense ->
-                    ExpenseItem(expense)
+                    ExpenseItem(
+                        expense = expense,
+                        onClick = { onNavigateEditExpense(expense.id.toString()) }
+                    )
                 }
             }
         }
@@ -127,21 +128,22 @@ fun SummaryCard(title: String, count: Int, color: Color, modifier: Modifier = Mo
 }
 
 @Composable
-fun ExpenseItem(expense: Expense) {
-    // Colori di stato coerenti con il controller JavaFX
+fun ExpenseItem(expense: Expense, onClick: () -> Unit) {
     val statusColor = when (expense.expenseState) {
-        ExpenseState.COMPLETED -> Color(0xFF4CAF50) // Green
-        ExpenseState.PARTIAL -> Color(0xFFFF9800)   // Orange
-        ExpenseState.INITIAL -> Color(0xFFFF5722)   // Redish
+        ExpenseState.COMPLETED -> Color(0xFF4CAF50)
+        ExpenseState.PARTIAL -> Color(0xFFFF9800)
+        ExpenseState.INITIAL -> Color(0xFFFF5722)
         else -> Color.Gray
     }
 
     Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp, vertical = 4.dp)
+            .clickable { onClick() },
         border = BorderStroke(1.dp, MaterialTheme.colorScheme.outlineVariant)
     ) {
         Row(modifier = Modifier.height(IntrinsicSize.Min)) {
-            // Barra laterale colorata (Stile visivo desktop)
             Box(
                 modifier = Modifier
                     .fillMaxHeight()
@@ -157,7 +159,7 @@ fun ExpenseItem(expense: Expense) {
                         color = MaterialTheme.colorScheme.primary
                     )
                     Text(
-                        text = expense.rawDate,
+                        text = expense.rawDate ?: "",
                         style = MaterialTheme.typography.bodySmall
                     )
                 }
@@ -174,10 +176,9 @@ fun ExpenseItem(expense: Expense) {
                 )
             }
 
-            // Stato testuale a destra
             Box(modifier = Modifier.padding(12.dp).align(Alignment.CenterVertically)) {
                 Text(
-                    text = expense.expenseState.name.take(4), // Abbreviato es. COMP, PART
+                    text = expense.expenseState.name.take(4),
                     style = MaterialTheme.typography.labelMedium,
                     color = statusColor,
                     fontWeight = FontWeight.Bold
