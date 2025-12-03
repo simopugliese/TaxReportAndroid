@@ -25,12 +25,15 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
+        // 2. PULIZIA CACHE AUTOMATICA ALL'AVVIO
+        // Rimuove eventuali file scaricati nelle sessioni precedenti per risparmiare spazio
+        cacheDir.deleteRecursively()
+
         setContent {
             val navController = rememberNavController()
             val scope = rememberCoroutineScope()
             val context = LocalContext.current
 
-            // Stato iniziale: "loading", "dashboard" o "settings"
             var startDestination by remember { mutableStateOf("loading") }
 
             LaunchedEffect(Unit) {
