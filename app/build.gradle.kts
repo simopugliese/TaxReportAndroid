@@ -63,7 +63,7 @@ dependencies {
     implementation(files("libs/TaxReport-1.0-v17-SNAPSHOT.jar"))
 
     // --- 2. DIPENDENZE DEL BACKEND (Java) ---
-    implementation("org.mariadb.jdbc:mariadb-java-client:3.3.3")
+    implementation("org.mariadb.jdbc:mariadb-java-client:2.0.3")
     implementation("com.hierynomus:smbj:0.13.0")
     implementation("com.fasterxml.jackson.core:jackson-databind:2.17.0")
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.17.0")

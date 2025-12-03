@@ -44,23 +44,16 @@ class AddExpenseViewModel : ViewModel() {
             _uiState.value = _uiState.value.copy(isLoading = true)
             try {
                 if (ServiceManager.isReady()) {
-                    // [CORREZIONE] Specifichiamo esplicitamente il tipo List<Person>
-                    val persons: List<Person> = try {
-                        // Se il metodo getAllPersons mancasse nel JAR, usiamo una lista vuota per ora
-                        emptyList<Person>()
-                    } catch (e: Exception) {
-                        emptyList<Person>()
-                    }
-
-                    // Nota: Se riesci a ricompilare il JAR esponendo "getAllPersons",
-                    // potrai sostituire emptyList() con la chiamata reale.
+                    val persons = ServiceManager.get().allPersons
 
                     _uiState.value = _uiState.value.copy(persons = persons, isLoading = false)
                 } else {
                     _uiState.value = _uiState.value.copy(isLoading = false, error = "Servizio non connesso")
                 }
             } catch (e: Exception) {
-                _uiState.value = _uiState.value.copy(isLoading = false, error = e.message)
+                // Se c'è un errore (es. metodo non trovato), non crashiamo ma mostriamo l'errore
+                e.printStackTrace()
+                _uiState.value = _uiState.value.copy(isLoading = false, error = "Err Persone: ${e.message}")
             }
         }
     }
